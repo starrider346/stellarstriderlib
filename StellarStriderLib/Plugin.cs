@@ -56,6 +56,7 @@ namespace StellarStriderLib
                 RegistryNetwork.Install(HarmonyInstance);
                 PartShapes.Install(HarmonyInstance);
                 PartRuntime.Install(HarmonyInstance);
+                PartMovement.Install(HarmonyInstance);
                 PartStateSave.Install(HarmonyInstance);
                 PartStateNetwork.Install();
                 _initialized = true;

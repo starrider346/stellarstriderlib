@@ -180,6 +180,7 @@ namespace StellarStriderLib.Showcase
                 Name = "Showcase White Cube",
                 Description = "A free block that demonstrates empty sockets and donor collision bounds.",
                 Donor = "Constant",
+                AllowMove = true,
                 Category = content.Key("parts"),
                 Size = Vector3.one,
                 Mass = 1,

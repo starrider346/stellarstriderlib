@@ -131,6 +131,9 @@ namespace StellarStriderLib
 
         public string Donor { get; set; }
 
+        /// <summary>Allows the donor's native pickup/move interaction. Defaults to false; other interactions are unaffected.</summary>
+        public bool AllowMove { get; set; }
+
         /// <summary>Local category ID, or a fully namespaced category key.</summary>
         public string Category { get; set; }
 

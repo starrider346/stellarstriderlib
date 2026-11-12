@@ -279,6 +279,7 @@ namespace StellarStriderLib.Runtime
                 throw new InvalidOperationException("Configure must not change numeric IDs: " + entry.Key);
             }
 
+            PartMovement.Configure(definition, settings.part);
             foreach (var socket in settings.part.GetComponentsInChildren<SocketObject>(true))
             {
                 SocketPositions.Add(socket, settings.part.transform.InverseTransformPoint(socket.transform.position));

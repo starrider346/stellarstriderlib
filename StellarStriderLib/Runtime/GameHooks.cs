@@ -43,7 +43,10 @@ namespace StellarStriderLib.Runtime
             Patch(harmony, AccessTools.Method(typeof(Research.ResearchClientProxy), "IsPartUnlocked"),
                 nameof(ClientResearch), true);
             Patch(harmony, AccessTools.Method(typeof(BuildMenu), "Start"), nameof(Menu), true);
+            Patch(harmony, AccessTools.Method(typeof(BuildMenu), "GenerateTabButtonsFromConfig"),
+                nameof(WrapMenuTabs), false);
             Patch(harmony, AccessTools.Method(typeof(TabButton), "Setup"), nameof(TabTitle), true);
+            Patch(harmony, AccessTools.Method(typeof(TabButton), "Setup"), nameof(FitTabTitle), false);
             Patch(harmony,
                 AccessTools.Method(typeof(ConnectionsTracker), "GetSocketPosition",
                     new[] { typeof(IPartPlacement), typeof(SocketObject) }), nameof(Socket), true);
@@ -175,6 +178,11 @@ namespace StellarStriderLib.Runtime
             TabsField.SetValue(__instance, tabs.ToArray());
         }
 
+        private static void WrapMenuTabs(Transform ___tabButtonsContainer, Transform ___tabPanelContainer)
+        {
+            BuildMenuTabLayout.Attach(___tabButtonsContainer as RectTransform, ___tabPanelContainer as RectTransform);
+        }
+
         private static void TabTitle(ref string __0)
         {
             if (StriderRegistry.Categories.TryGetValue(__0, out var category))
@@ -182,6 +190,8 @@ namespace StellarStriderLib.Runtime
                 __0 = category.Definition.Name;
             }
         }
+
+        private static void FitTabTitle(TabButton __instance) => BuildMenuTabSize.Attach(__instance);
 
         internal static void RefreshProviders()
         {
