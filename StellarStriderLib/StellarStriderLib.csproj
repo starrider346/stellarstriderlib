@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <Version>1.2.0</Version>
+    <AssemblyName>StellarStriderLib</AssemblyName>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <Import Project="../Local.props" Condition="Exists('../Local.props')" />
+  <PropertyGroup>
+    <GamePath Condition="'$(GamePath)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/Library/Application Support/Steam/steamapps/common/StellarDrive Demo</GamePath>
+    <ManagedPath Condition="'$(ManagedPath)' == ''">$(GamePath)/StellarDrive_Data/Managed</ManagedPath>
+    <LoaderPath Condition="'$(LoaderPath)' == ''">$(GamePath)/MelonLoader/net35</LoaderPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Core"><HintPath>$(ManagedPath)/Core.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Items.Model"><HintPath>$(ManagedPath)/Items.Model.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="WorldTracking.Interface"><HintPath>$(ManagedPath)/WorldTracking.Interface.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Ships"><HintPath>$(ManagedPath)/Ships.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Ships.Interface"><HintPath>$(ManagedPath)/Ships.Interface.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Players.Interface"><HintPath>$(ManagedPath)/Players.Interface.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Research"><HintPath>$(ManagedPath)/Research.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Research.Interface"><HintPath>$(ManagedPath)/Research.Interface.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UI"><HintPath>$(ManagedPath)/UI.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UI.Interface"><HintPath>$(ManagedPath)/UI.Interface.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Managers.Interface"><HintPath>$(ManagedPath)/Managers.Interface.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Saving"><HintPath>$(ManagedPath)/Saving.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Saving.Interface"><HintPath>$(ManagedPath)/Saving.Interface.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Assembly-CSharp"><HintPath>$(ManagedPath)/Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="FishNet.Runtime"><HintPath>$(ManagedPath)/FishNet.Runtime.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(ManagedPath)/UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.PhysicsModule"><HintPath>$(ManagedPath)/UnityEngine.PhysicsModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UI"><HintPath>$(ManagedPath)/UnityEngine.UI.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UIModule"><HintPath>$(ManagedPath)/UnityEngine.UIModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.TextRenderingModule"><HintPath>$(ManagedPath)/UnityEngine.TextRenderingModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.IMGUIModule"><HintPath>$(ManagedPath)/UnityEngine.IMGUIModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.ImageConversionModule"><HintPath>$(ManagedPath)/UnityEngine.ImageConversionModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Unity.Localization"><HintPath>$(ManagedPath)/Unity.Localization.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Newtonsoft.Json"><HintPath>$(ManagedPath)/Newtonsoft.Json.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="MelonLoader"><HintPath>$(LoaderPath)/MelonLoader.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="0Harmony"><HintPath>$(LoaderPath)/0Harmony.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+  <Target Name="ValidateGame" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(LoaderPath)/MelonLoader.dll')" Text="Set GamePath and LoaderPath to your StellarDrive/MelonLoader installation." />
+  </Target>
+</Project>

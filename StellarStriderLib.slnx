@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="StellarStriderLib/StellarStriderLib.csproj" />
+  <Project Path="Examples/Showcase/StellarStriderLib.Showcase.csproj" />
+</Solution>
