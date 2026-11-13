@@ -47,4 +47,13 @@
   <Target Name="ValidateGame" BeforeTargets="ResolveAssemblyReferences">
     <Error Condition="!Exists('$(LoaderPath)/MelonLoader.dll')" Text="Set GamePath and LoaderPath to your StellarDrive/MelonLoader installation." />
   </Target>
+  <Target Name="DeployModToStellarDrive" AfterTargets="Build"
+          Condition="'$(Configuration)' == 'Release' and '$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true' and !$([System.String]::IsNullOrWhiteSpace('$(SD_MODS_DIR)'))">
+    <Error Condition="!$([System.IO.Path]::IsPathFullyQualified('$(SD_MODS_DIR)'))"
+           Text="SD_MODS_DIR must be an absolute host filesystem path to the game's Mods directory. Received: $(SD_MODS_DIR)" />
+    <Message Importance="high" Text="Deploying $(TargetFileName) to $(SD_MODS_DIR)" />
+    <MakeDir Directories="$(SD_MODS_DIR)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SD_MODS_DIR)" Retries="0" />
+    <Message Importance="high" Text="Deployed $(TargetFileName) to $(SD_MODS_DIR)" />
+  </Target>
 </Project>
