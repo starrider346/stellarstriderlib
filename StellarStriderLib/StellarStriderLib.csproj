@@ -47,6 +47,9 @@
   <Target Name="ValidateGame" BeforeTargets="ResolveAssemblyReferences">
     <Error Condition="!Exists('$(LoaderPath)/MelonLoader.dll')" Text="Set GamePath and LoaderPath to your StellarDrive/MelonLoader installation." />
   </Target>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' and !$([System.String]::IsNullOrWhiteSpace('$(SD_MODS_DIR)'))">
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+  </PropertyGroup>
   <Target Name="DeployModToStellarDrive" AfterTargets="Build"
           Condition="'$(Configuration)' == 'Release' and '$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true' and !$([System.String]::IsNullOrWhiteSpace('$(SD_MODS_DIR)'))">
     <Error Condition="!$([System.IO.Path]::IsPathFullyQualified('$(SD_MODS_DIR)'))"
