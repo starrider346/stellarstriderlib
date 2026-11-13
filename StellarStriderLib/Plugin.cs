@@ -34,6 +34,7 @@ namespace StellarStriderLib
 
         internal static void Report(string message, bool stop = true)
         {
+            LoadingScreen.Cancel();
             LastError = message;
             _stopRequested |= stop;
             MelonLogger.Error(message);
@@ -59,6 +60,7 @@ namespace StellarStriderLib
                 PartMovement.Install(HarmonyInstance);
                 PartStateSave.Install(HarmonyInstance);
                 PartStateNetwork.Install();
+                LoadingScreen.Install(HarmonyInstance);
                 _initialized = true;
                 LoggerInstance.Msg("Registration API ready; waiting for a world registry.");
             }
@@ -77,6 +79,7 @@ namespace StellarStriderLib
 
             try
             {
+                LoadingScreen.Update();
                 RegistryNetwork.Update();
                 PartStateNetwork.Update();
                 if (!_stopRequested)
@@ -127,6 +130,7 @@ namespace StellarStriderLib
 
         public override void OnDeinitializeMelon()
         {
+            LoadingScreen.Shutdown();
             if (!_initialized)
             {
                 return;
@@ -140,5 +144,8 @@ namespace StellarStriderLib
                 mod.Assets.Release();
             }
         }
+
+        public override void OnSceneWasInitialized(int buildIndex, string sceneName) =>
+            LoadingScreen.SceneInitialized(buildIndex, sceneName);
     }
 }

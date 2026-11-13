@@ -27,6 +27,8 @@ namespace StellarStriderLib
         internal static readonly Dictionary<string, Entry<CategoryDefinition>> Categories = new(StringComparer.Ordinal);
         internal static readonly Dictionary<string, Entry<PartDefinition>> Parts = new(StringComparer.Ordinal);
         internal static readonly Dictionary<string, Entry<ItemDefinition>> Items = new(StringComparer.Ordinal);
+        internal static readonly Dictionary<string, Entry<LoadingWallpaperDefinition>> Wallpapers =
+            new(StringComparer.Ordinal);
 
         internal static readonly Dictionary<string, Entry<ResearchNodeDefinition>> Research =
             new(StringComparer.Ordinal);
@@ -249,6 +251,20 @@ namespace StellarStriderLib
             var entry = new Entry<T> { Owner = this, Key = key, Definition = definition };
             entries.Add(key, entry);
             return entry;
+        }
+
+        /// <summary>Registers an embedded loading wallpaper. Client-local; not included in save IDs or network checks.</summary>
+        public void RegisterLoadingWallpaper(LoadingWallpaperDefinition definition)
+        {
+            if (definition == null || string.IsNullOrWhiteSpace(definition.TextureResource))
+            {
+                throw new ArgumentException("Wallpaper image resource is required.");
+            }
+
+            Add(StriderRegistry.Wallpapers, definition.Id, new LoadingWallpaperDefinition
+            {
+                Id = definition.Id, TextureResource = definition.TextureResource
+            });
         }
 
         /// <summary>Registers a build-menu category owned by this mod.</summary>

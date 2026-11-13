@@ -14,6 +14,10 @@ namespace StellarStriderLib.Showcase
         public override void OnInitializeMelon()
         {
             _content = StriderRegistry.Create(ShowcaseContent.ModId, typeof(Plugin).Assembly);
+            _content.RegisterLoadingWallpaper(new LoadingWallpaperDefinition
+            {
+                Id = "panel", TextureResource = ShowcaseContent.PanelTexture
+            });
             var icon = _content.Assets.Texture(ShowcaseContent.PanelTexture);
             ShowcaseContent.RegisterContent(icon);
 
