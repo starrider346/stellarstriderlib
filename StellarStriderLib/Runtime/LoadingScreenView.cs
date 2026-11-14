@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
@@ -10,6 +11,10 @@ namespace StellarStriderLib.Runtime
         private GameObject _root;
         private CanvasGroup _group;
         private RawImage _wallpaper;
+        private RawImage _sidebarBackdrop;
+        private RawImage _footerBackdrop;
+        private RawImage _logo;
+        private Text _world;
         private Text _percentage;
         private RectTransform _fill;
 
@@ -18,13 +23,17 @@ namespace StellarStriderLib.Runtime
             if (_root == null) Create();
             SetOpacity(0);
             _root.SetActive(true);
+            if (_logo.texture == null)
+                _logo.texture = Resources.FindObjectsOfTypeAll<Texture2D>()
+                    .FirstOrDefault(texture => texture.name == "sd_white_small");
+            _logo.enabled = _logo.texture != null;
             SetWallpaper(null);
+            SetWorldName(null);
             SetProgress(0);
         }
 
         private void Create()
         {
-            // Assign before adding components so a partially constructed canvas can be cleaned up.
             _root = new GameObject("SSLib Loading Screen", typeof(RectTransform));
             Object.DontDestroyOnLoad(_root);
             _group = _root.AddComponent<CanvasGroup>();
@@ -40,12 +49,43 @@ namespace StellarStriderLib.Runtime
 
             _wallpaper = Child("Wallpaper", _root.transform).gameObject.AddComponent<RawImage>();
             _wallpaper.raycastTarget = true;
+
+            var sidebar = Child("Title Sidebar", _root.transform);
+            sidebar.anchorMax = new Vector2(0, 1);
+            sidebar.pivot = new Vector2(0, 0.5f);
+            sidebar.sizeDelta = new Vector2(415, 0);
+            sidebar.anchoredPosition = Vector2.zero;
+            _sidebarBackdrop = Child("Sidebar Backdrop", sidebar).gameObject.AddComponent<RawImage>();
+            _sidebarBackdrop.rectTransform.offsetMin = new Vector2(0, 130);
+            _sidebarBackdrop.raycastTarget = false;
+
+            _logo = Child("StellarDrive Title", sidebar).gameObject.AddComponent<RawImage>();
+            _logo.raycastTarget = false;
+            var logoRect = _logo.rectTransform;
+            logoRect.anchorMin = logoRect.anchorMax = new Vector2(0, 1);
+            logoRect.pivot = new Vector2(0, 1);
+            logoRect.anchoredPosition = new Vector2(40, -40);
+            logoRect.sizeDelta = new Vector2(315, 131.25f);
+
+            _world = Label("Loading…", sidebar, 32, TextAnchor.UpperLeft);
+            _world.supportRichText = false;
+            var titleFont = Resources.FindObjectsOfTypeAll<Font>()
+                .FirstOrDefault(font => font.name == "TitlesTabsLabels_Anta-Regular");
+            if (titleFont != null) _world.font = titleFont;
+            var worldRect = _world.rectTransform;
+            worldRect.anchorMin = new Vector2(0, 1);
+            worldRect.anchorMax = Vector2.one;
+            worldRect.pivot = new Vector2(0, 1);
+            worldRect.offsetMin = new Vector2(40, -275);
+            worldRect.offsetMax = new Vector2(-40, -191.25f);
+
             var footer = Child("Footer", _root.transform);
             footer.anchorMax = new Vector2(1, 0);
             footer.sizeDelta = new Vector2(0, 130);
             footer.pivot = new Vector2(0.5f, 0);
             footer.anchoredPosition = Vector2.zero;
-            footer.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0.8f);
+            _footerBackdrop = footer.gameObject.AddComponent<RawImage>();
+            _footerBackdrop.raycastTarget = false;
 
             var track = Child("Progress Track", footer);
             track.anchorMin = track.anchorMax = Vector2.zero;
@@ -59,9 +99,11 @@ namespace StellarStriderLib.Runtime
             _percentage = Label("0%", footer, 28, TextAnchor.LowerLeft);
             _percentage.rectTransform.offsetMin = new Vector2(40, 58);
             _percentage.rectTransform.offsetMax = new Vector2(-40, -18);
-            var status = Label("Loading…", footer, 24, TextAnchor.LowerRight);
-            status.rectTransform.offsetMin = new Vector2(160, 58);
-            status.rectTransform.offsetMax = new Vector2(-40, -18);
+        }
+
+        internal void SetWorldName(string worldName)
+        {
+            _world.text = string.IsNullOrWhiteSpace(worldName) ? "Loading…" : "Loading " + worldName;
         }
 
         private static RectTransform Child(string name, Transform parent)
@@ -91,6 +133,10 @@ namespace StellarStriderLib.Runtime
         {
             _wallpaper.texture = texture;
             _wallpaper.color = texture == null ? Color.black : Color.white;
+            _sidebarBackdrop.texture = _footerBackdrop.texture = texture;
+            _sidebarBackdrop.color = _footerBackdrop.color = texture == null
+                ? Color.black
+                : new Color(0.55f, 0.55f, 0.55f, 1);
             ResizeWallpaper();
         }
 
@@ -103,6 +149,14 @@ namespace StellarStriderLib.Runtime
             var width = Mathf.Min(1, screenAspect / imageAspect);
             var height = Mathf.Min(1, imageAspect / screenAspect);
             _wallpaper.uvRect = new Rect((1 - width) / 2, (1 - height) / 2, width, height);
+            var canvasSize = ((RectTransform)_root.transform).rect.size;
+            if (canvasSize.x <= 0 || canvasSize.y <= 0) return;
+            var sidebarWidth = Mathf.Clamp01(415 / canvasSize.x);
+            var footerHeight = Mathf.Clamp01(130 / canvasSize.y);
+            var uv = _wallpaper.uvRect;
+            _sidebarBackdrop.uvRect = new Rect(uv.x, uv.y + uv.height * footerHeight,
+                uv.width * sidebarWidth, uv.height * (1 - footerHeight));
+            _footerBackdrop.uvRect = new Rect(uv.x, uv.y, uv.width, uv.height * footerHeight);
         }
 
         internal void SetProgress(double value)
