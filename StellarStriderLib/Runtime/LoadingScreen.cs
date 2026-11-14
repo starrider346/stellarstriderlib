@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using FishNet.Transporting;
 using HarmonyLib;
 using MelonLoader;
+using Managers.Interface;
 using StellarStriderLib.Core;
 using UI.Loading;
 using UnityEngine;
@@ -82,6 +84,13 @@ namespace StellarStriderLib.Runtime
                 Cancel();
                 _view ??= new LoadingScreenView();
                 _view.Show();
+                if (MainGameSceneLoadData.Mode != MainGameSceneLoadData.GameMode.JoinGameSteam &&
+                    MainGameSceneLoadData.Mode != MainGameSceneLoadData.GameMode.JoinGameIp &&
+                    !string.IsNullOrWhiteSpace(MainGameSceneLoadData.SaveFileFullName))
+                {
+                    _view.SetWorldName(new FileInfo(MainGameSceneLoadData.SaveFileFullName).Directory?.Name);
+                }
+
                 Progress.Begin(Time.realtimeSinceStartupAsDouble);
                 return true;
             }
@@ -243,9 +252,11 @@ namespace StellarStriderLib.Runtime
             _wallpaperSelected = false;
             _view?.Hide();
             foreach (var pair in Hidden)
-                if (pair.Key != null) pair.Key.alpha = pair.Value;
+                if (pair.Key != null)
+                    pair.Key.alpha = pair.Value;
             foreach (var group in AddedGroups)
-                if (group != null) Object.Destroy(group);
+                if (group != null)
+                    Object.Destroy(group);
             Hidden.Clear();
             AddedGroups.Clear();
         }
