@@ -40,9 +40,10 @@ namespace StellarStriderLib.Runtime
                     "OnServerConnectionChanged", nameof(ServerConnectionChanged));
                 foreach (var method in new[]
                          {
-                             AccessTools.Method(typeof(LoadingScreenDisabler), "Awake"),
                              AccessTools.Method(typeof(Managers.Common.MainGameSceneInitializer), "Start"),
-                             AccessTools.Method(typeof(Saving.Services.GameLoader), "LoadState")
+                             AccessTools.Method(typeof(Saving.Services.GameLoader), "LoadState"),
+                             AccessTools.Method(typeof(Managers.Server.Saving.ServerStateLoader),
+                                 "LoadWorldFromStreamingAssetSave")
                          })
                 {
                     harmony.Patch(method, finalizer: new HarmonyMethod(typeof(LoadingScreen), nameof(LoadFailed)));
@@ -122,8 +123,7 @@ namespace StellarStriderLib.Runtime
             }
             catch (Exception error)
             {
-                Cancel();
-                MelonLogger.Error("Game scene loading failed: " + error);
+                Plugin.Report("Game scene loading failed: " + error.GetBaseException().Message);
             }
             finally
             {
@@ -160,17 +160,20 @@ namespace StellarStriderLib.Runtime
 
         private static void ClientConnectionChanged(ClientConnectionStateArgs __0)
         {
-            if (Progress.Active && __0.ConnectionState == LocalConnectionState.Stopped) Cancel();
+            if (Progress.Active && __0.ConnectionState == LocalConnectionState.Stopped)
+                Plugin.Report("The connection stopped before the world finished loading.");
         }
 
         private static void ServerConnectionChanged(ServerConnectionStateArgs __0)
         {
-            if (Progress.Active && __0.ConnectionState == LocalConnectionState.Stopped) Cancel();
+            if (Progress.Active && __0.ConnectionState == LocalConnectionState.Stopped)
+                Plugin.Report("The connection stopped before the world finished loading.");
         }
 
         private static Exception LoadFailed(Exception __exception)
         {
-            if (__exception != null) Cancel();
+            if (__exception != null)
+                Plugin.Report("World loading failed: " + __exception.GetBaseException().Message);
             return __exception;
         }
 
