@@ -27,6 +27,9 @@ namespace StellarStriderLib.Runtime
         private static readonly System.Reflection.FieldInfo TabsField =
             AccessTools.Field(typeof(BuildMenu), "tabsConfig");
 
+        private static readonly System.Reflection.FieldInfo ResearchButtonsField =
+            AccessTools.Field(typeof(UI.Research.ResearchCanvas), "_buttons");
+
         private static readonly HashSet<PartSettingsProvider> Providers = new();
 
         internal static void Install(HarmonyLib.Harmony harmony)
@@ -45,6 +48,7 @@ namespace StellarStriderLib.Runtime
             Patch(harmony, AccessTools.Method(typeof(BuildMenu), "Start"), nameof(Menu), true);
             Patch(harmony, AccessTools.Method(typeof(BuildMenu), "GenerateTabButtonsFromConfig"),
                 nameof(WrapMenuTabs), false);
+            Patch(harmony, AccessTools.Method(typeof(BuildMenu), "LoadTabPanel"), nameof(ScrollMenuParts), false);
             Patch(harmony, AccessTools.Method(typeof(TabButton), "Setup"), nameof(TabTitle), true);
             Patch(harmony, AccessTools.Method(typeof(TabButton), "Setup"), nameof(FitTabTitle), false);
             Patch(harmony,
@@ -183,6 +187,11 @@ namespace StellarStriderLib.Runtime
             BuildMenuTabLayout.Attach(___tabButtonsContainer as RectTransform, ___tabPanelContainer as RectTransform);
         }
 
+        private static void ScrollMenuParts(Transform ___tabPanelContainer, global::Core.Values.GameColorPalette ___colorPalette)
+        {
+            BuildMenuPartScroll.Attach(___tabPanelContainer as RectTransform, ___colorPalette.uiLineColor);
+        }
+
         private static void TabTitle(ref string __0)
         {
             if (StriderRegistry.Categories.TryGetValue(__0, out var category))
@@ -281,7 +290,9 @@ namespace StellarStriderLib.Runtime
                 return;
             }
 
-            var buttons = ___buttonsContainer.GetComponentsInChildren<UI.Research.ResearchSelectButton>();
+            // RefreshButtons destroys the previous generation at the end of the frame.
+            // Querying children here includes those stale cards and makes bounds drift on every rebuild.
+            var buttons = ((List<UI.Research.ResearchSelectButton>)ResearchButtonsField.GetValue(__instance)).ToArray();
             if (buttons.Length == 0)
             {
                 return;

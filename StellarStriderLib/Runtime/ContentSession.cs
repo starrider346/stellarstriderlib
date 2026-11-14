@@ -387,7 +387,8 @@ namespace StellarStriderLib.Runtime
 
         internal static void Relayout(IEnumerable<ResearchSettings> source)
         {
-            var fixedNodes = source.Where(n => n != null && !Owned.Contains(n)).ToDictionary(n => "native:" + n.id,
+            var existing = source.Where(n => n != null && !Owned.Contains(n)).ToArray();
+            var fixedNodes = existing.ToDictionary(n => "native:" + n.id,
                 n => new GridPoint(n.positionInTechTree.x, n.positionInTechTree.y));
             var layout = ResearchLayout.Arrange(
                 StriderRegistry.Research.Values.Select(e => new LayoutNode
@@ -395,7 +396,12 @@ namespace StellarStriderLib.Runtime
                     Key = e.Key, Group = e.Group,
                     Parents = e.Definition.Prerequisites
                         .Select(p => p.Value.IsNative ? "native:" + p.Value.NativeId : p.Value.Key).ToArray()
-                }), fixedNodes);
+                }).Concat(existing.Select(n => new LayoutNode
+                {
+                    Key = "native:" + n.id,
+                    Parents = (n.requirements ?? Array.Empty<ResearchSettings>())
+                        .Where(p => p != null).Select(p => "native:" + p.id).ToArray()
+                })), fixedNodes);
             foreach (var entry in layout)
             {
                 ResearchSettings[Registry.Resolve(ContentKind.Research, entry.Key)].positionInTechTree =
@@ -417,7 +423,12 @@ namespace StellarStriderLib.Runtime
                     {
                         Key = e.Key, Group = e.Group,
                         Parents = e.Definition.Prerequisites.Select(p => Parent(p.Value)).ToArray()
-                    }), fixedNodes);
+                    }).Concat(ResearchSettings.Values.Select(n => new LayoutNode
+                    {
+                        Key = "native:" + n.id,
+                        Parents = (n.requirements ?? Array.Empty<ResearchSettings>())
+                            .Where(p => p != null).Select(p => "native:" + p.id).ToArray()
+                    })), fixedNodes);
             foreach (var entry in StriderRegistry.Research.Values)
             {
                 var definition = entry.Definition;

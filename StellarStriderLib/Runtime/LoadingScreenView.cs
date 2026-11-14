@@ -12,7 +12,6 @@ namespace StellarStriderLib.Runtime
         private CanvasGroup _group;
         private RawImage _wallpaper;
         private RawImage _sidebarBackdrop;
-        private RawImage _footerBackdrop;
         private RawImage _logo;
         private Text _world;
         private Text _percentage;
@@ -56,7 +55,6 @@ namespace StellarStriderLib.Runtime
             sidebar.sizeDelta = new Vector2(415, 0);
             sidebar.anchoredPosition = Vector2.zero;
             _sidebarBackdrop = Child("Sidebar Backdrop", sidebar).gameObject.AddComponent<RawImage>();
-            _sidebarBackdrop.rectTransform.offsetMin = new Vector2(0, 130);
             _sidebarBackdrop.raycastTarget = false;
 
             _logo = Child("StellarDrive Title", sidebar).gameObject.AddComponent<RawImage>();
@@ -79,16 +77,8 @@ namespace StellarStriderLib.Runtime
             worldRect.offsetMin = new Vector2(40, -275);
             worldRect.offsetMax = new Vector2(-40, -191.25f);
 
-            var footer = Child("Footer", _root.transform);
-            footer.anchorMax = new Vector2(1, 0);
-            footer.sizeDelta = new Vector2(0, 130);
-            footer.pivot = new Vector2(0.5f, 0);
-            footer.anchoredPosition = Vector2.zero;
-            _footerBackdrop = footer.gameObject.AddComponent<RawImage>();
-            _footerBackdrop.raycastTarget = false;
-
-            var track = Child("Progress Track", footer);
-            track.anchorMin = track.anchorMax = Vector2.zero;
+            var track = Child("Progress Track", sidebar);
+            track.anchorMin = Vector2.zero;
             track.anchorMax = new Vector2(1, 0);
             track.offsetMin = new Vector2(40, 32);
             track.offsetMax = new Vector2(-40, 44);
@@ -96,9 +86,11 @@ namespace StellarStriderLib.Runtime
             _fill = Child("Progress", track);
             _fill.gameObject.AddComponent<Image>().color = new Color(0.3f, 0.8f, 1, 1);
 
-            _percentage = Label("0%", footer, 28, TextAnchor.LowerLeft);
+            _percentage = Label("0%", sidebar, 28, TextAnchor.LowerLeft);
+            _percentage.rectTransform.anchorMin = Vector2.zero;
+            _percentage.rectTransform.anchorMax = new Vector2(1, 0);
             _percentage.rectTransform.offsetMin = new Vector2(40, 58);
-            _percentage.rectTransform.offsetMax = new Vector2(-40, -18);
+            _percentage.rectTransform.offsetMax = new Vector2(-40, 112);
         }
 
         internal void SetWorldName(string worldName)
@@ -133,8 +125,8 @@ namespace StellarStriderLib.Runtime
         {
             _wallpaper.texture = texture;
             _wallpaper.color = texture == null ? Color.black : Color.white;
-            _sidebarBackdrop.texture = _footerBackdrop.texture = texture;
-            _sidebarBackdrop.color = _footerBackdrop.color = texture == null
+            _sidebarBackdrop.texture = texture;
+            _sidebarBackdrop.color = texture == null
                 ? Color.black
                 : new Color(0.55f, 0.55f, 0.55f, 1);
             ResizeWallpaper();
@@ -152,11 +144,8 @@ namespace StellarStriderLib.Runtime
             var canvasSize = ((RectTransform)_root.transform).rect.size;
             if (canvasSize.x <= 0 || canvasSize.y <= 0) return;
             var sidebarWidth = Mathf.Clamp01(415 / canvasSize.x);
-            var footerHeight = Mathf.Clamp01(130 / canvasSize.y);
             var uv = _wallpaper.uvRect;
-            _sidebarBackdrop.uvRect = new Rect(uv.x, uv.y + uv.height * footerHeight,
-                uv.width * sidebarWidth, uv.height * (1 - footerHeight));
-            _footerBackdrop.uvRect = new Rect(uv.x, uv.y, uv.width, uv.height * footerHeight);
+            _sidebarBackdrop.uvRect = new Rect(uv.x, uv.y, uv.width * sidebarWidth, uv.height);
         }
 
         internal void SetProgress(double value)

@@ -25,6 +25,8 @@ namespace StellarStriderLib.Runtime
         private float _height;
         private float _appliedExtraHeight = -1;
 
+        internal int ContentTopPadding { get; private set; }
+
         internal static void Attach(RectTransform tabs, RectTransform panel)
         {
             if (tabs == null || panel == null || !(tabs.parent is RectTransform parent))
@@ -77,6 +79,13 @@ namespace StellarStriderLib.Runtime
                     wrapping._dividerTemplate.gameObject.SetActive(false);
                 }
                 wrapping._panel = panel;
+                if (panel.anchorMin.y < panel.anchorMax.y)
+                {
+                    var offsetMin = panel.offsetMin;
+                    offsetMin.y = 32;
+                    panel.offsetMin = offsetMin;
+                }
+
                 wrapping._panelOffsetMin = panel.offsetMin;
                 wrapping._panelOffsetMax = panel.offsetMax;
                 wrapping._panelAnchoredPosition = panel.anchoredPosition;
@@ -167,8 +176,18 @@ namespace StellarStriderLib.Runtime
             }
             else
             {
+                var nativeTop = _panelOffsetMax.y - extraHeight;
+                var viewportTop = nativeTop;
+                if (_panel.parent is RectTransform panelParent)
+                {
+                    var tabsBottom = panelParent.InverseTransformPoint(rectTransform.TransformPoint(
+                        new Vector3(0, rectTransform.rect.yMin, 0)));
+                    viewportTop = Mathf.Max(nativeTop, tabsBottom.y - panelParent.rect.yMax);
+                }
+
+                ContentTopPadding = Mathf.CeilToInt(viewportTop - nativeTop);
                 _panel.offsetMin = _panelOffsetMin;
-                _panel.offsetMax = _panelOffsetMax - new Vector2(0, extraHeight);
+                _panel.offsetMax = new Vector2(_panelOffsetMax.x, viewportTop);
             }
         }
 
