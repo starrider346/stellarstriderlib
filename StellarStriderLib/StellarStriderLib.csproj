@@ -3,12 +3,22 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
-    <Version>1.2.0</Version>
+    <Version>1.5.1</Version>
     <AssemblyName>StellarStriderLib</AssemblyName>
+    <Authors>StriderDev</Authors>
+    <Description>A MelonLoader content-registration library for StellarDrive, providing parts, items, research, embedded assets, and saved multiplayer state.</Description>
+    <RepositoryUrl>https://github.com/starrider346/stellarstriderlib</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="../LICENSE" Pack="true" PackagePath="" />
+    <None Update="PackageReadme.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
   <Import Project="../Local.props" Condition="Exists('../Local.props')" />
   <PropertyGroup>
     <GamePath Condition="'$(GamePath)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/Library/Application Support/Steam/steamapps/common/StellarDrive Demo</GamePath>

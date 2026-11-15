@@ -8,6 +8,7 @@ using Ships.Interface.Model.Parts.Common;
 using Ships.Interface.Settings;
 using Ships.Parts.Common;
 using Ships.Parts.Common.Model.Reactions;
+using Ships.Parts.Gyroscope;
 using StellarStriderLib.Core;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -336,7 +337,9 @@ namespace StellarStriderLib.Runtime
 
             foreach (var component in root.GetComponents<Component>())
             {
-                if (component is IShipPartVisual || component is Renderer || component is MeshFilter)
+                // The donor's stick transforms were removed with its original model.
+                if (component is IShipPartVisual || component is Renderer || component is MeshFilter ||
+                    component is FlightSticksAnimator)
                 {
                     Object.DestroyImmediate(component);
                 }
