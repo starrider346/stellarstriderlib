@@ -5,7 +5,7 @@ using StellarStriderLib.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-[assembly: MelonInfo(typeof(StellarStriderLib.Plugin), "StellarStriderLib", "1.5.1", "StriderDev")]
+[assembly: MelonInfo(typeof(StellarStriderLib.Plugin), "StellarStriderLib", "1.6.0", "StriderDev")]
 [assembly: MelonGame("CuriousOwlGames", "StellarDrive")]
 [assembly: MelonPriority(-1000)]
 

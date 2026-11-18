@@ -3,7 +3,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
-    <Version>1.5.1</Version>
+    <Version>1.6.0</Version>
     <AssemblyName>StellarStriderLib</AssemblyName>
     <Authors>StriderDev</Authors>
     <Description>A MelonLoader content-registration library for StellarDrive, providing parts, items, research, embedded assets, and saved multiplayer state.</Description>
@@ -31,6 +31,7 @@
     <Reference Include="WorldTracking.Interface"><HintPath>$(ManagedPath)/WorldTracking.Interface.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Ships"><HintPath>$(ManagedPath)/Ships.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Ships.Interface"><HintPath>$(ManagedPath)/Ships.Interface.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="WorldTracking"><HintPath>$(ManagedPath)/WorldTracking.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Players.Interface"><HintPath>$(ManagedPath)/Players.Interface.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Research"><HintPath>$(ManagedPath)/Research.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Research.Interface"><HintPath>$(ManagedPath)/Research.Interface.dll</HintPath><Private>false</Private></Reference>

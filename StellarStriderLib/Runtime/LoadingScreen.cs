@@ -24,12 +24,13 @@ namespace StellarStriderLib.Runtime
         private static readonly System.Random Random = new();
         private static LoadingScreenView _view;
         private static bool _failed, _bypassTransition, _transitionQueued, _wallpaperSelected;
-        private static int _generation, _completeFrame = -1;
+        private static int _generation, _completeFrame = -1, _playerReadyFrame = -1;
 
         internal static void Install(HarmonyLib.Harmony harmony)
         {
             try
             {
+                LoadingSimulation.Install(harmony);
                 Patch(harmony, typeof(LoadingScreenDisabler), "Awake", nameof(NativeAwake));
                 harmony.Patch(AccessTools.Method(typeof(LoadingScreenDisabler), "DisableLoadingScreen"),
                     postfix: new HarmonyMethod(typeof(LoadingScreen), nameof(PlayerReady)));
@@ -91,8 +92,19 @@ namespace StellarStriderLib.Runtime
                     _view.SetWorldName(new FileInfo(MainGameSceneLoadData.SaveFileFullName).Directory?.Name);
                 }
 
-                Progress.Begin(Time.realtimeSinceStartupAsDouble);
-                return true;
+                Progress.Begin(Time.realtimeSinceStartupAsDouble, StriderRegistry.LoadingSteps.Select(pair =>
+                    new KeyValuePair<string, LoadingStepDefinition>(pair.Key, pair.Value.Definition)));
+                try
+                {
+                    Progress.StartSteps();
+                }
+                catch (Exception error)
+                {
+                    Plugin.Report(error.Message);
+                    return false;
+                }
+
+                return Progress.Active;
             }
             catch (Exception error)
             {
@@ -105,7 +117,7 @@ namespace StellarStriderLib.Runtime
         {
             if (__0 != "MainGame" || _bypassTransition || _failed) return true;
             if (_transitionQueued) return false;
-            if (!BeginWorld()) return true;
+            if (!BeginWorld()) return _failed;
             try
             {
                 _transitionQueued = true;
@@ -164,7 +176,10 @@ namespace StellarStriderLib.Runtime
 
         private static void PlayerReady(LoadingScreenDisabler __instance)
         {
-            if (__instance.gameObject.scene.name == "MainGame") Progress.MarkReady(Time.frameCount);
+            if (__instance.gameObject.scene.name != "MainGame" || !Progress.Active) return;
+            _playerReadyFrame = Time.frameCount;
+            try { LoadingSimulation.Begin(); }
+            catch (Exception error) { Plugin.Report("Could not pause simulation during loading: " + error.GetBaseException().Message); }
         }
 
         private static void ClientConnectionChanged(ClientConnectionStateArgs __0)
@@ -191,6 +206,9 @@ namespace StellarStriderLib.Runtime
             if (!Progress.Active) return;
             try
             {
+                LoadingSimulation.Hold();
+                if (_playerReadyFrame >= 0 && Time.frameCount > _playerReadyFrame + 1)
+                    Progress.MarkReady(Time.frameCount);
                 if (_completeFrame >= 0 && Time.frameCount > _completeFrame)
                 {
                     Progress.FadeOut();
@@ -204,6 +222,7 @@ namespace StellarStriderLib.Runtime
 
                 Progress.Update(Time.realtimeSinceStartupAsDouble, Time.unscaledDeltaTime, Time.frameCount);
                 _view.ResizeWallpaper();
+                _view.SetLoadingState(Progress.StepName, Progress.Complete);
                 _view.SetProgress(Progress.Value);
                 _view.SetOpacity(Progress.Opacity);
                 if (Progress.FadingOut && Progress.Opacity <= 0)
@@ -212,7 +231,7 @@ namespace StellarStriderLib.Runtime
                     return;
                 }
 
-                if (Progress.Value >= 1 && Progress.Opacity >= 1 && _completeFrame < 0)
+                if (Progress.Complete && Progress.Opacity >= 1 && _completeFrame < 0)
                     _completeFrame = Time.frameCount;
             }
             catch (Exception error)
@@ -246,8 +265,12 @@ namespace StellarStriderLib.Runtime
         internal static void Cancel()
         {
             _generation++;
+            LoadingSimulation.End();
             Progress.Cancel();
+            if (Progress.CancellationError != null)
+                MelonLogger.Warning("Loading step cancellation handler failed: " + Progress.CancellationError);
             _completeFrame = -1;
+            _playerReadyFrame = -1;
             _transitionQueued = false;
             _wallpaperSelected = false;
             _view?.Hide();

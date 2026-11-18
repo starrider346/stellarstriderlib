@@ -27,13 +27,19 @@ namespace StellarStriderLib
         internal static readonly Dictionary<string, Entry<CategoryDefinition>> Categories = new(StringComparer.Ordinal);
         internal static readonly Dictionary<string, Entry<PartDefinition>> Parts = new(StringComparer.Ordinal);
         internal static readonly Dictionary<string, Entry<ItemDefinition>> Items = new(StringComparer.Ordinal);
+
         internal static readonly Dictionary<string, Entry<LoadingWallpaperDefinition>> Wallpapers =
+            new(StringComparer.Ordinal);
+
+        internal static readonly Dictionary<string, Entry<LoadingStepDefinition>> LoadingSteps =
             new(StringComparer.Ordinal);
 
         internal static readonly Dictionary<string, Entry<ResearchNodeDefinition>> Research =
             new(StringComparer.Ordinal);
 
         internal static bool Frozen;
+
+        public const int RegistryProtocolVersion = 3;
 
         public static string LastError => Plugin.LastError;
         public static bool WorldReady => ContentSession.Ready;
@@ -251,6 +257,14 @@ namespace StellarStriderLib
             var entry = new Entry<T> { Owner = this, Key = key, Definition = definition };
             entries.Add(key, entry);
             return entry;
+        }
+
+        /// <summary>Registers a reusable client-local loading step. Not included in save IDs or network checks.</summary>
+        public void RegisterLoadingStep(LoadingStepDefinition definition)
+        {
+            if (definition == null) throw new ArgumentNullException(nameof(definition));
+            var snapshot = definition.Snapshot();
+            Add(StriderRegistry.LoadingSteps, snapshot.Id, snapshot);
         }
 
         /// <summary>Registers an embedded loading wallpaper. Client-local; not included in save IDs or network checks.</summary>

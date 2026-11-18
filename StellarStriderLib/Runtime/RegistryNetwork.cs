@@ -11,6 +11,8 @@ using FishNet.Managing.Server;
 using FishNet.Serializing;
 using FishNet.Transporting;
 using HarmonyLib;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using StellarStriderLib.Core;
 using UnityEngine;
 
@@ -61,7 +63,9 @@ namespace StellarStriderLib.Runtime
 
         private static NetworkManager _network;
         private static RegistryTransfer.Receiver _receiver = new();
-        private static string _completedToken;
+        private static string _completedToken, _completedDigest;
+        private static string _incomingToken;
+        private static readonly HashSet<string> RetiredTokens = new();
         private static bool _connected;
 
         internal static void Install(HarmonyLib.Harmony harmony)
@@ -100,12 +104,12 @@ namespace StellarStriderLib.Runtime
 
         private static bool Gate(ServerManager __instance, NetworkConnection __0)
         {
-            if (Approved.Remove(__0))
+            Attach(__instance.NetworkManager);
+            if (Approved.Contains(__0))
             {
                 return true;
             }
 
-            Attach(__instance.NetworkManager);
             if (!PendingAuth.ContainsKey(__0))
             {
                 PendingAuth.Add(__0, new Pending { Server = __instance, Expires = Time.unscaledTime + 30 });
@@ -124,6 +128,7 @@ namespace StellarStriderLib.Runtime
             if (_network != null)
             {
                 _network.ServerManager.UnregisterBroadcast<Ack>(ReceiveAck);
+                _network.ServerManager.OnRemoteConnectionState -= RemoteState;
                 _network.ClientManager.UnregisterBroadcast<Chunk>(ReceiveChunk);
             }
 
@@ -135,7 +140,15 @@ namespace StellarStriderLib.Runtime
             }
 
             _network.ServerManager.RegisterBroadcast<Ack>(ReceiveAck, false);
+            _network.ServerManager.OnRemoteConnectionState += RemoteState;
             _network.ClientManager.RegisterBroadcast<Chunk>(ReceiveChunk);
+        }
+
+        private static void RemoteState(NetworkConnection connection, RemoteConnectionStateArgs args)
+        {
+            if (args.ConnectionState != RemoteConnectionState.Stopped) return;
+            Approved.Remove(connection);
+            PendingAuth.Remove(connection);
         }
 
         internal static void Update()
@@ -170,14 +183,29 @@ namespace StellarStriderLib.Runtime
                     continue;
                 }
 
-                if (!ContentSession.Ready)
+                if (!ContentSession.Ready || !WorldDataService.Ready)
                 {
                     continue;
                 }
 
                 if (pending.Chunks == null)
                 {
-                    var bytes = Encoding.UTF8.GetBytes(ContentSession.Registry.Serialize());
+                    var manifest = new JObject
+                    {
+                        ["format"] = StriderRegistry.RegistryProtocolVersion,
+                        ["registry"] = JObject.Parse(ContentSession.Registry.Serialize()),
+                        ["modWorldData"] = WorldDataService.Capture()
+                    };
+                    var bytes = Encoding.UTF8.GetBytes(manifest.ToString(Formatting.None));
+                    if (bytes.Length > RegistryTransfer.MaximumBytes)
+                    {
+                        MelonLoader.MelonLogger.Warning(
+                            "Cannot synchronize this world: content snapshot exceeds 4 MiB.");
+                        PendingAuth.Remove(connection);
+                        connection.Disconnect(false);
+                        continue;
+                    }
+
                     pending.Ticket.SetManifest(bytes);
                     var size = Math.Min(4096,
                         pending.Server.NetworkManager.TransportManager.GetMTU((byte)Channel.Reliable) - 256);
@@ -226,11 +254,21 @@ namespace StellarStriderLib.Runtime
 
             try
             {
-                if (_completedToken == chunk.Token)
+                if (_completedToken == chunk.Token && _completedDigest == chunk.Digest)
                 {
                     _network.ClientManager.Broadcast(new Ack { Token = chunk.Token, Digest = chunk.Digest, Error = "" },
                         Channel.Reliable);
                     return;
+                }
+
+                if (_completedToken == chunk.Token || RetiredTokens.Contains(chunk.Token)) return;
+                if (_incomingToken != chunk.Token)
+                {
+                    if (_incomingToken != null) RetiredTokens.Add(_incomingToken);
+                    if (RetiredTokens.Count > 64)
+                        throw new InvalidOperationException("Too many registry revisions during authentication.");
+                    _incomingToken = chunk.Token;
+                    _receiver = new RegistryTransfer.Receiver();
                 }
 
                 var bytes = _receiver.Add(chunk.Token, chunk.Digest, chunk.Index, chunk.Count, chunk.Data);
@@ -239,7 +277,11 @@ namespace StellarStriderLib.Runtime
                     return;
                 }
 
-                ApplyRegistry(WorldRegistry.Parse(Encoding.UTF8.GetString(bytes)), chunk);
+                var manifest = JObject.Parse(Encoding.UTF8.GetString(bytes));
+                if ((int?)manifest["format"] != StriderRegistry.RegistryProtocolVersion)
+                    throw new InvalidOperationException("Incompatible SSLib multiplayer protocol.");
+                ApplyRegistry(WorldRegistry.Parse(manifest["registry"]?.ToString(Formatting.None)), chunk,
+                    manifest["modWorldData"] as JObject);
             }
             catch (Exception error)
             {
@@ -253,7 +295,7 @@ namespace StellarStriderLib.Runtime
             }
         }
 
-        private static void ApplyRegistry(WorldRegistry registry, Chunk chunk)
+        private static void ApplyRegistry(WorldRegistry registry, Chunk chunk, JObject modWorldData)
         {
             try
             {
@@ -269,7 +311,7 @@ namespace StellarStriderLib.Runtime
                         throw new InvalidOperationException("Host registry changed during authentication.");
                     }
                 }
-                else
+                else if (ContentSession.Registry?.Serialize() != registry.Serialize() || !ContentSession.Ready)
                 {
                     var check = WorldRegistry.Parse(registry.Serialize());
                     ContentSession.End();
@@ -279,8 +321,10 @@ namespace StellarStriderLib.Runtime
                     ContentSession.Bind(registry);
                 }
 
+                if (!_network.IsServerStarted) WorldDataService.Restore(modWorldData);
                 Plugin.ClearError();
                 _completedToken = chunk.Token;
+                _completedDigest = chunk.Digest;
                 _network.ClientManager.Broadcast(new Ack { Token = chunk.Token, Digest = chunk.Digest, Error = "" },
                     Channel.Reliable);
             }
@@ -317,15 +361,9 @@ namespace StellarStriderLib.Runtime
                 return;
             }
 
+            // Authentication may still be delayed by another prefix. Keep approval for this connection.
             Approved.Add(connection);
-            try
-            {
-                Authenticate.Invoke(pending.Server, new object[] { connection });
-            }
-            finally
-            {
-                Approved.Remove(connection);
-            }
+            Authenticate.Invoke(pending.Server, new object[] { connection });
         }
 
         internal static void WorldChanging()
@@ -339,17 +377,25 @@ namespace StellarStriderLib.Runtime
                 }
             }
 
+            foreach (var connection in Approved.ToArray())
+                if (connection.IsActive && !connection.IsAuthenticated) connection.Disconnect(false);
             Approved.Clear();
+            _completedDigest = null;
             _receiver = new RegistryTransfer.Receiver();
             _completedToken = null;
+            _incomingToken = null;
+            RetiredTokens.Clear();
         }
 
         internal static void Reset()
         {
             PendingAuth.Clear();
             Approved.Clear();
+            _completedDigest = null;
             _receiver = new RegistryTransfer.Receiver();
             _completedToken = null;
+            _incomingToken = null;
+            RetiredTokens.Clear();
         }
 
         internal static void Shutdown()

@@ -14,8 +14,10 @@ namespace StellarStriderLib.Runtime
         private RawImage _sidebarBackdrop;
         private RawImage _logo;
         private Text _world;
+        private Text _step;
         private Text _percentage;
         private RectTransform _fill;
+        private bool _complete;
 
         internal void Show()
         {
@@ -28,6 +30,7 @@ namespace StellarStriderLib.Runtime
             _logo.enabled = _logo.texture != null;
             SetWallpaper(null);
             SetWorldName(null);
+            SetLoadingState("Loading save", false);
             SetProgress(0);
         }
 
@@ -91,6 +94,13 @@ namespace StellarStriderLib.Runtime
             _percentage.rectTransform.anchorMax = new Vector2(1, 0);
             _percentage.rectTransform.offsetMin = new Vector2(40, 58);
             _percentage.rectTransform.offsetMax = new Vector2(-40, 112);
+
+            _step = Label("Loading save", sidebar, 24, TextAnchor.LowerLeft);
+            _step.supportRichText = false;
+            _step.rectTransform.anchorMin = Vector2.zero;
+            _step.rectTransform.anchorMax = new Vector2(1, 0);
+            _step.rectTransform.offsetMin = new Vector2(40, 120);
+            _step.rectTransform.offsetMax = new Vector2(-40, 192);
         }
 
         internal void SetWorldName(string worldName)
@@ -151,7 +161,13 @@ namespace StellarStriderLib.Runtime
         internal void SetProgress(double value)
         {
             _fill.anchorMax = new Vector2((float)value, 1);
-            _percentage.text = (value >= 1 ? 100 : Math.Min(99, (int)(value * 100))) + "%";
+            _percentage.text = (_complete ? 100 : Math.Min(99, (int)(value * 100))) + "%";
+        }
+
+        internal void SetLoadingState(string name, bool complete)
+        {
+            _step.text = name;
+            _complete = complete;
         }
 
         internal void SetOpacity(double opacity)
