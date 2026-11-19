@@ -24,4 +24,7 @@
     <EmbeddedResource Include="Assets/cube.obj" LogicalName="Showcase.cube.obj" />
     <EmbeddedResource Include="Assets/panel.png" LogicalName="Showcase.panel.png" />
   </ItemGroup>
+  <ItemGroup>
+    <None Remove="README.md" />
+  </ItemGroup>
 </Project>

@@ -31,6 +31,21 @@ Register content from `OnInitializeMelon` on Unity's main thread, before the fir
 world opens. Keep mod IDs and content keys stable across releases. Resolve
 world-specific settings and numeric IDs after the registry's `WorldBound` event.
 
+## Mod configs and Options
+
+Use `StriderConfig.Create(modId, typeof(Plugin).Assembly)` in `OnInitializeMelon`.
+Declare settings with `Register(id, defaultValue)`, read them from memory with
+`Get<T>(id)`, and save them with `Set(id, value)`. Each mod's settings live in
+`config/<mod>/config.json` under the game's Unity persistent data folder.
+On Windows this is
+`%USERPROFILE%\AppData\LocalLow\CuriousOwlGames\StellarDrive\config\<mod>\config.json`.
+
+Use `RegisterCategory(id, label)` to add an Options category below the vanilla
+categories. Bind sliders, text fields, toggles, number fields, and dropdowns to
+registered settings with their qualified keys, available through `config.Key(id)`.
+Use `category.SetEnabledWhen(config.Key(id), condition)` to gray out a control
+whenever the condition returns false while Options is open.
+
 ## Loading steps
 
 Register a `LoadingStepDefinition` through `mod.RegisterLoadingStep(...)` during

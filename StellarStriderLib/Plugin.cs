@@ -54,6 +54,7 @@ namespace StellarStriderLib
         public override void OnInitializeMelon()
         {
             CheckThread();
+            ModOptionsMenu.Install(HarmonyInstance);
             try
             {
                 GameHooks.Install(HarmonyInstance);
@@ -75,11 +76,14 @@ namespace StellarStriderLib
             }
         }
 
+        public override void OnLateInitializeMelon() => StriderConfig.SaveDefaults();
+
         public override void OnUpdate()
         {
             RecoverWorldLoad();
             if (!_initialized) return;
 
+            PerformanceProfiler.Update();
             try
             {
                 LoadingScreen.Update();
@@ -149,7 +153,11 @@ namespace StellarStriderLib
 
         public override void OnGUI()
         {
-            if (LastError.Length == 0 || _returnToTitle) return;
+            if (LastError.Length == 0 || _returnToTitle)
+            {
+                PerformanceProfiler.Draw();
+                return;
+            }
             var previousColor = GUI.color;
             var previousDepth = GUI.depth;
             GUI.depth = -32000;
@@ -183,6 +191,7 @@ namespace StellarStriderLib
 
         public override void OnDeinitializeMelon()
         {
+            PerformanceProfiler.Close();
             LoadingScreen.Shutdown();
             if (!_initialized)
             {
