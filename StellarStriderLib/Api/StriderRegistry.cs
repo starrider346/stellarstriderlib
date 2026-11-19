@@ -321,6 +321,7 @@ namespace StellarStriderLib
             }
 
             PartShapes.Validate(definition);
+            ThermalModel.ValidateProfile(definition.ThermalCapacityKelvin, definition.ThermalConductivity);
             StateFields.ValidateDefinition(definition.State);
             CheckCosts(definition.BuildingCost);
             Add(StriderRegistry.Parts, definition.Id, definition);

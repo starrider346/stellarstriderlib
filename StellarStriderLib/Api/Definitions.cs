@@ -158,6 +158,12 @@ namespace StellarStriderLib
 
         public float? Mass { get; set; }
 
+        /// <summary>Temperature in Kelvin at which the part is destroyed. Defaults to 1,000 K.</summary>
+        public float? ThermalCapacityKelvin { get; set; }
+
+        /// <summary>Contact heat transfer rate. Defaults to 0.10; zero insulates the part.</summary>
+        public float? ThermalConductivity { get; set; }
+
         public ItemCost[] BuildingCost { get; set; }
 
         /// <summary>Called immediately after each mesh is created, before the next mesh and before part configuration.</summary>

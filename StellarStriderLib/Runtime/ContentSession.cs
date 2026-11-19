@@ -490,6 +490,7 @@ namespace StellarStriderLib.Runtime
         internal static void End()
         {
             Ready = false;
+            ThermalRuntime.Reset();
             PartRuntime.Reset();
             PartStateNetwork.Reset();
             if (Registry != null)

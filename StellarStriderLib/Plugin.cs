@@ -5,7 +5,7 @@ using StellarStriderLib.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-[assembly: MelonInfo(typeof(StellarStriderLib.Plugin), "StellarStriderLib", "1.6.0", "StriderDev")]
+[assembly: MelonInfo(typeof(StellarStriderLib.Plugin), "StellarStriderLib", "1.7.0", "StriderDev")]
 [assembly: MelonGame("CuriousOwlGames", "StellarDrive")]
 [assembly: MelonPriority(-1000)]
 
@@ -67,6 +67,9 @@ namespace StellarStriderLib
                 PartStateSave.Install(HarmonyInstance);
                 PartStateNetwork.Install();
                 LoadingScreen.Install(HarmonyInstance);
+                ThermalRuntime.Install(HarmonyInstance);
+                ThermalNetwork.Install();
+                ThermalVisuals.Install(HarmonyInstance);
                 _initialized = true;
                 LoggerInstance.Msg("Registration API ready; waiting for a world registry.");
             }
@@ -89,6 +92,8 @@ namespace StellarStriderLib
                 LoadingScreen.Update();
                 RegistryNetwork.Update();
                 PartStateNetwork.Update();
+                ThermalRuntime.UpdateClock();
+                ThermalNetwork.Pump();
                 if (!_stopRequested)
                 {
                     return;
@@ -199,8 +204,10 @@ namespace StellarStriderLib
             }
 
             PartStateNetwork.Shutdown();
+            ThermalNetwork.Shutdown();
             RegistryNetwork.Shutdown();
             ContentSession.End();
+            ThermalVisuals.Shutdown();
             foreach (var mod in StriderRegistry.Mods.Values)
             {
                 mod.Assets.Release();

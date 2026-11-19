@@ -46,15 +46,51 @@ namespace StellarStriderLib.Runtime
                 layout.padding = new RectOffset(52, 52, 34, 24);
                 layout.spacing = 14;
                 Text(content, category.Label, controls.Font, 62, 88).fontStyle = FontStyles.Bold;
-                foreach (var option in category.Options)
+                foreach (var entry in category.Options)
                 {
-                    panel.AddOption(content, scroll, category.Config, option, controls);
+                    if (entry is ConfigOption option)
+                        panel.AddOption(content, scroll, category.Config, option, controls);
+                    else if (entry is OptionsContent display)
+                        AddContent(content, display, controls.Font);
                 }
                 panel.RefreshInteractivity();
             }
             finally
             {
                 root.gameObject.SetActive(true);
+            }
+        }
+
+        private static void AddContent(RectTransform content, OptionsContent display, TMP_FontAsset font)
+        {
+            if (display.Kind == OptionsContentKind.Divider)
+            {
+                var divider = OptionsLayout.Element("Divider", content);
+                divider.gameObject.AddComponent<LayoutElement>().minHeight = 3;
+                var line = divider.gameObject.AddComponent<Image>();
+                line.color = new Color(1f, 1f, 1f, .35f);
+                line.raycastTarget = false;
+                return;
+            }
+
+            var (size, height) = display.Kind switch
+            {
+                OptionsContentKind.Header => (50, 62),
+                OptionsContentKind.Subheader => (40, 50),
+                _ => (34, 0)
+            };
+            var text = Text(content, display.Text, font, size, height);
+            text.name = display.Kind.ToString();
+            text.textWrappingMode = TextWrappingModes.Normal;
+            if (display.Kind == OptionsContentKind.Paragraph)
+            {
+                text.alignment = TextAlignmentOptions.TopLeft;
+                text.color = new Color(1f, 1f, 1f, .82f);
+                text.lineSpacing = 5;
+            }
+            else
+            {
+                text.fontStyle = FontStyles.Bold;
             }
         }
 

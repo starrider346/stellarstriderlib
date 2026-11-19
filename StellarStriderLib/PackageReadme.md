@@ -43,6 +43,9 @@ On Windows this is
 Use `RegisterCategory(id, label)` to add an Options category below the vanilla
 categories. Bind sliders, text fields, toggles, number fields, and dropdowns to
 registered settings with their qualified keys, available through `config.Key(id)`.
+Use `RegisterHeader(text)`, `RegisterSubheader(text)`, `RegisterParagraph(text)`,
+and `RegisterDivider()` to organize a category. These elements appear in
+registration order alongside the controls and need no config keys.
 Use `category.SetEnabledWhen(config.Key(id), condition)` to gray out a control
 whenever the condition returns false while Options is open.
 

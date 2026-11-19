@@ -68,7 +68,11 @@ namespace StellarStriderLib.Showcase
             config.Register("timer_precision", "tenths");
 
             var category = config.RegisterCategory("showcase", "Strider Showcase");
+            category.RegisterHeader("Console timer");
+            category.RegisterParagraph("The overlay shows elapsed time reported by Showcase Consoles in the current world.");
             category.RegisterToggle("Show console timer", config.Key("show_timer"));
+            category.RegisterDivider();
+            category.RegisterSubheader("Appearance");
             category.RegisterText("Timer heading", config.Key("timer_heading"));
             category.RegisterSlider("Timer opacity", config.Key("timer_opacity"), 1, 100);
             category.SetEnabledWhen(config.Key("timer_opacity"), () => config.Get<bool>("show_timer"));

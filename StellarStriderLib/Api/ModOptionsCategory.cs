@@ -9,13 +9,13 @@ namespace StellarStriderLib
     public sealed class ModOptionsCategory
     {
         private static int _nextOrder;
-        private readonly List<ConfigOption> _options = new();
+        private readonly List<IOptionsEntry> _options = new();
 
         public string Key { get; }
         public string Label { get; }
         internal int Order { get; }
         internal ModConfig Config { get; }
-        internal IReadOnlyList<ConfigOption> Options => _options;
+        internal IReadOnlyList<IOptionsEntry> Options => _options;
 
         internal ModOptionsCategory(ModConfig config, string key, string label)
         {
@@ -45,13 +45,25 @@ namespace StellarStriderLib
         public void RegisterDropdown(string label, string configKey, params (string Value, string Label)[] choices) =>
             Add(configKey, new ConfigOption(label, ConfigControl.Dropdown, choices: choices));
 
+        /// <summary>Adds a section heading in registration order.</summary>
+        public void RegisterHeader(string text) => _options.Add(new OptionsContent(OptionsContentKind.Header, text));
+
+        /// <summary>Adds a smaller section heading in registration order.</summary>
+        public void RegisterSubheader(string text) => _options.Add(new OptionsContent(OptionsContentKind.Subheader, text));
+
+        /// <summary>Adds wrapping body text in registration order.</summary>
+        public void RegisterParagraph(string text) => _options.Add(new OptionsContent(OptionsContentKind.Paragraph, text));
+
+        /// <summary>Adds a horizontal divider in registration order.</summary>
+        public void RegisterDivider() => _options.Add(new OptionsContent(OptionsContentKind.Divider));
+
         /// <summary>
         /// Sets a condition for editing this category's control. The condition runs on the Unity main thread
         /// while the panel is open. Pass null to keep the control enabled.
         /// </summary>
         public void SetEnabledWhen(string configKey, Func<bool> enabledWhen)
         {
-            var option = _options.Find(candidate => Config.Key(candidate.Setting.Id) == configKey);
+            var option = _options.OfType<ConfigOption>().FirstOrDefault(candidate => Config.Key(candidate.Setting.Id) == configKey);
             if (option == null)
                 throw new ArgumentException("No control in this category is bound to " + configKey + ".", nameof(configKey));
             option.EnabledWhen = enabledWhen;
@@ -64,6 +76,30 @@ namespace StellarStriderLib
         }
     }
 
+    internal interface IOptionsEntry { }
+
+    internal enum OptionsContentKind
+    {
+        Header,
+        Subheader,
+        Paragraph,
+        Divider
+    }
+
+    internal sealed class OptionsContent : IOptionsEntry
+    {
+        internal readonly OptionsContentKind Kind;
+        internal readonly string Text;
+
+        internal OptionsContent(OptionsContentKind kind, string text = null)
+        {
+            if (kind != OptionsContentKind.Divider && string.IsNullOrWhiteSpace(text))
+                throw new ArgumentException("Options text is required.", nameof(text));
+            Kind = kind;
+            Text = text;
+        }
+    }
+
     internal enum ConfigControl
     {
         Slider,
@@ -73,7 +109,7 @@ namespace StellarStriderLib
         Dropdown
     }
 
-    internal sealed class ConfigOption
+    internal sealed class ConfigOption : IOptionsEntry
     {
         internal readonly string Label;
         internal readonly ConfigControl Control;

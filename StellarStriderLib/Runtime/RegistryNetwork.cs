@@ -21,6 +21,8 @@ namespace StellarStriderLib.Runtime
     /// <summary>Exchanges the host registry before releasing native multiplayer authentication.</summary>
     internal static class RegistryNetwork
     {
+        private const int WireProtocolVersion = 4;
+
         internal struct Chunk : IBroadcast
         {
             public string Token, Digest;
@@ -192,7 +194,7 @@ namespace StellarStriderLib.Runtime
                 {
                     var manifest = new JObject
                     {
-                        ["format"] = StriderRegistry.RegistryProtocolVersion,
+                        ["format"] = WireProtocolVersion,
                         ["registry"] = JObject.Parse(ContentSession.Registry.Serialize()),
                         ["modWorldData"] = WorldDataService.Capture()
                     };
@@ -278,7 +280,7 @@ namespace StellarStriderLib.Runtime
                 }
 
                 var manifest = JObject.Parse(Encoding.UTF8.GetString(bytes));
-                if ((int?)manifest["format"] != StriderRegistry.RegistryProtocolVersion)
+                if ((int?)manifest["format"] != WireProtocolVersion)
                     throw new InvalidOperationException("Incompatible SSLib multiplayer protocol.");
                 ApplyRegistry(WorldRegistry.Parse(manifest["registry"]?.ToString(Formatting.None)), chunk,
                     manifest["modWorldData"] as JObject);

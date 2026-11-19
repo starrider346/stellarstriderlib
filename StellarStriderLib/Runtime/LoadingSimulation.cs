@@ -21,6 +21,8 @@ namespace StellarStriderLib.Runtime
         private static readonly ConditionalWeakTable<WorldTimeServerTracker, WorldClock> WorldClocks = new();
         private static TimeManager _physics;
 
+        internal static bool IsPaused => Pause.Active;
+
         internal static void Install(HarmonyLib.Harmony harmony)
         {
             harmony.Patch(AccessTools.Method(typeof(WorldTimeServerTracker), "UpdateFixedTime"),

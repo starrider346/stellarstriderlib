@@ -53,7 +53,10 @@ namespace StellarStriderLib.Runtime
                 });
             }
 
-            return new JObject { ["format"] = 1, ["parts"] = records };
+            var document = new JObject { ["format"] = 1, ["parts"] = records };
+            var thermal = ThermalSave.Capture();
+            if (thermal.Count != 0) document["thermal"] = thermal;
+            return document;
         }
 
         private static void Saved(Saving.Services.Model.GameFileInfo __result)
@@ -139,10 +142,14 @@ namespace StellarStriderLib.Runtime
                 throw new InvalidDataException("Part state was already restored.");
             }
 
+            var thermal = ThermalSave.Parse(root["thermal"]);
+
             foreach (var pair in parsed)
             {
                 PartRuntime.RestoreRecord(pair.Key, pair.Value.Key, pair.Value.Values);
             }
+
+            ThermalRuntime.SetRestore(thermal);
         }
     }
 }
