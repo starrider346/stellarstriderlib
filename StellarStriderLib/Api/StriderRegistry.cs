@@ -82,7 +82,8 @@ namespace StellarStriderLib
         internal static IReadOnlyDictionary<ContentKind, string[]> Definitions() =>
             new Dictionary<ContentKind, string[]>
             {
-                [ContentKind.Part] = Parts.Keys.ToArray(), [ContentKind.Item] = Items.Keys.ToArray(),
+                [ContentKind.Part] = ContentSession.Parts.Select(part => part.Key).ToArray(),
+                [ContentKind.Item] = Items.Keys.ToArray(),
                 [ContentKind.Research] = Research.Keys.ToArray()
             };
 
@@ -325,6 +326,17 @@ namespace StellarStriderLib
             StateFields.ValidateDefinition(definition.State);
             CheckCosts(definition.BuildingCost);
             Add(StriderRegistry.Parts, definition.Id, definition);
+        }
+
+        /// <summary>Registers a stateless hull using a native hull donor for snapping and room sealing.</summary>
+        public void RegisterHullPart(PartDefinition definition)
+        {
+            if (definition == null) throw new ArgumentNullException(nameof(definition));
+
+            var key = Key(definition.Id);
+            HullParts.Validate(key, definition);
+            RegisterPart(definition);
+            HullParts.Register(key);
         }
 
         /// <summary>Registers a solid inventory item in the save-owned item namespace.</summary>

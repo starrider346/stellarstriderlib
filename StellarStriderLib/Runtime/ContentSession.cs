@@ -27,6 +27,8 @@ namespace StellarStriderLib.Runtime
         internal static readonly Dictionary<uint, ResearchSettings> ResearchSettings = new();
         internal static readonly Dictionary<SocketObject, Vector3> SocketPositions = new();
         internal static readonly Dictionary<ushort, PartSettings> Donors = new();
+        internal static IEnumerable<Entry<PartDefinition>> Parts =>
+            StriderRegistry.Parts.Values.Concat(HullParts.Variants);
         private static readonly List<Object> Owned = new();
         private static GameObject _holder;
 
@@ -52,7 +54,8 @@ namespace StellarStriderLib.Runtime
 
         internal static void PrimeExternal()
         {
-            new Ships.Interface.Services.PartSettingsProvider().GetAllPartSettings();
+            var parts = new Ships.Interface.Services.PartSettingsProvider().GetAllPartSettings();
+            HullParts.ResolveDonors(parts);
             foreach (var list in Resources.FindObjectsOfTypeAll<ItemSettingsList>())
             {
                 var items = (ItemSettings[])AccessTools.Field(typeof(ItemSettingsList), "items").GetValue(list);
@@ -122,12 +125,21 @@ namespace StellarStriderLib.Runtime
                     BuildItem(entry);
                 }
 
-                foreach (var entry in StriderRegistry.Parts.Values.OrderBy(e => e.Key, StringComparer.Ordinal))
+                foreach (var entry in Parts.OrderBy(e => e.Key, StringComparer.Ordinal))
                 {
-                    BuildPart(entry);
+                    if (HullParts.Donors.TryGetValue(entry.Key, out var hullDonor))
+                    {
+                        BuildHullPart(entry, hullDonor);
+                    }
+                    else
+                    {
+                        BuildPart(entry);
+                    }
                 }
 
+                HullParts.LinkVariants();
                 BuildResearch();
+                HullParts.InheritVariantUnlocks(ResearchSettings.Values);
                 Ready = true;
                 PartRuntime.Bind();
                 GameHooks.RefreshProviders();
@@ -164,7 +176,7 @@ namespace StellarStriderLib.Runtime
                 }
             }
 
-            foreach (var entry in StriderRegistry.Parts.Values)
+            foreach (var entry in Parts)
             {
                 if (!StriderRegistry.Categories.ContainsKey(entry.Owner.CategoryKey(entry.Definition.Category)))
                 {
@@ -288,6 +300,60 @@ namespace StellarStriderLib.Runtime
 
             PartSettings.Add(settings.id, settings);
             Donors.Add(settings.id, donor);
+        }
+
+        private static void BuildHullPart(Entry<PartDefinition> entry, HullPartSettings donor)
+        {
+            var definition = entry.Definition;
+            var settings = Own(Object.Instantiate(donor));
+            settings.name = entry.Key;
+            settings.hideFlags = HideFlags.HideAndDontSave;
+            settings.id = (ushort)Registry.Resolve(ContentKind.Part, entry.Key);
+            settings.fullLabel = definition.Name;
+            settings.description = definition.Description;
+            settings.localizedDescription = null;
+            settings.pivotedSettings = null;
+            settings.size = definition.Size ?? donor.size;
+            settings.mass = definition.Mass ?? donor.Mass;
+            settings.hasItsOwnMesh = definition.Models != null || donor.hasItsOwnMesh;
+            settings.part = definition.Models == null && donor.part != null
+                ? Object.Instantiate(donor.part, _holder.transform, false)
+                : Root(entry.Key);
+            settings.part.name = entry.Key;
+            settings.part.hideFlags = HideFlags.HideAndDontSave;
+
+            var cost = definition.BuildingCost == null
+                ? donor.BuildingCost
+                : Costs(definition.BuildingCost).Select(item => item.ItemDrop).ToList();
+            HullParts.Bind(settings, definition, cost);
+            var context = new PartBuildContext(settings, entry.Owner.Assets);
+            if (definition.Models != null)
+            {
+                settings.part.AddComponent<DefaultShipPartVisuals>();
+                var bounds = settings.part.AddComponent<Ships.Interface.Model.Parts.ShipPartBounds>();
+                foreach (var model in definition.Models)
+                {
+                    var child = entry.Owner.Assets.AddMesh(settings.part.transform, model);
+                    definition.ConfigureMesh?.Invoke(context, child, model);
+                }
+
+                HullObjects.ConfigureBounds(bounds, donor.Bounds, definition.PhysicsShapes);
+            }
+
+            definition.Configure?.Invoke(context);
+            if (settings.id != Registry.Resolve(ContentKind.Part, entry.Key) || settings.part == null ||
+                settings.IsStateful || !string.IsNullOrEmpty(settings.customCreationClass) ||
+                settings.size != (definition.Size ?? donor.size) || settings.snappingStyle != donor.snappingStyle ||
+                settings.hullMeshSegmentType != donor.hullMeshSegmentType || settings.defaultUp != donor.defaultUp ||
+                settings.defaultForward != donor.defaultForward || settings.pivotedSettings != null ||
+                settings.hasItsOwnMesh != (definition.Models != null || donor.hasItsOwnMesh) ||
+                (float.IsNaN(settings.mass) || float.IsInfinity(settings.mass) || settings.mass <= 0))
+            {
+                throw new InvalidOperationException("Configure changed required hull settings for " + entry.Key);
+            }
+
+            PartSettings.Add(settings.id, settings);
+            if (StriderRegistry.Parts.ContainsKey(entry.Key)) Donors.Add(settings.id, donor);
         }
 
         private static void Resize(PartSettings settings, Vector3 size)
@@ -502,6 +568,7 @@ namespace StellarStriderLib.Runtime
             }
 
             GameHooks.RemoveOwned();
+            HullParts.Reset();
             if (_holder != null)
             {
                 Object.DestroyImmediate(_holder);

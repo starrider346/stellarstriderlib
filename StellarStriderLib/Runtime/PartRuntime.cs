@@ -53,7 +53,7 @@ namespace StellarStriderLib.Runtime
         internal static void Bind()
         {
             Definitions.Clear();
-            foreach (var entry in StriderRegistry.Parts.Values)
+            foreach (var entry in ContentSession.Parts)
             {
                 Definitions.Add((ushort)ContentSession.Registry.Resolve(Core.ContentKind.Part, entry.Key),
                     (entry.Key, entry.Definition));

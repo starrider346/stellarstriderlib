@@ -50,6 +50,12 @@ namespace StellarStriderLib.Runtime
             if (part.Hull is { } hull)
             {
                 var placement = hull.HullPlacement;
+                if (HullParts.CollisionBoxes(hull.HullSettings) is { } boxes)
+                {
+                    return boxes.Select(box => ThermalShape.Box(box.Center, box.Size, Quaternion.Euler(box.Rotation))
+                        .Place(placement.LocalPosition, placement.Rotation)).ToArray();
+                }
+
                 var origin = new Vector3Int(4, 4, 4);
                 var normalized = new HullPartPosition(origin, placement.Position.Type);
                 var key = (part.Settings.id, normalized, placement.ForwardOrientation, placement.UpOrientation);

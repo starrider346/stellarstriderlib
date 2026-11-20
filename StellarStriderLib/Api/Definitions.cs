@@ -146,6 +146,9 @@ namespace StellarStriderLib
         /// <summary>Placement footprint. Physics and interaction shapes can be defined independently.</summary>
         public Vector3? Size { get; set; }
 
+        /// <summary>On a slope hull donor, uses the Y component of Size as the horizontal run and preserves a one-cell rise.</summary>
+        public bool StretchHullSlope { get; set; }
+
         /// <summary>Null retains donor solid bounds; empty disables solid collisions. Boxes use part-local coordinates.</summary>
         public BoxShape[] PhysicsShapes { get; set; }
 

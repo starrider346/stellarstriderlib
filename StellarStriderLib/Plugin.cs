@@ -59,6 +59,7 @@ namespace StellarStriderLib
             {
                 GameHooks.Install(HarmonyInstance);
                 SocketGrid.Install(HarmonyInstance);
+                HullParts.Install(HarmonyInstance);
                 WorldLifecycle.Install(HarmonyInstance);
                 RegistryNetwork.Install(HarmonyInstance);
                 PartShapes.Install(HarmonyInstance);

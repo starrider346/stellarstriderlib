@@ -152,13 +152,15 @@ namespace StellarStriderLib.Runtime
         private static PartGlow CreateOverlay(TrackedShipClient ship, ThermalPart part)
         {
             var glow = new PartGlow(part);
-            if (part.Hull is { } hull)
+            var root = part.Hull is { } hull
+                ? HullObjects.Visual(ship, hull.HullPlacement.Position)
+                : ship.TryGetFloatingPartVisual(part.Stateful.Id, out var visual) ? visual?.GameObject : null;
+            if (part.Hull is { } generatedHull && root == null)
             {
-                AddHull(glow, ship.VisualObject.transform, hull.HullSettings, hull.HullPlacement);
+                AddHull(glow, ship.VisualObject.transform, generatedHull.HullSettings, generatedHull.HullPlacement);
             }
-            else if (ship.TryGetFloatingPartVisual(part.Stateful.Id, out var visual) && visual?.GameObject != null)
+            else if (root != null)
             {
-                var root = visual.GameObject;
                 foreach (var filter in root.GetComponentsInChildren<MeshFilter>(true))
                 {
                     if (filter.sharedMesh == null || !filter.TryGetComponent<MeshRenderer>(out var source)) continue;
@@ -180,7 +182,7 @@ namespace StellarStriderLib.Runtime
                 }
 
                 if (part.Settings is HullPartSettings { hasItsOwnMesh: false } settings &&
-                    part.Stateful.Placement is HullPartPlacement placement)
+                    part.Stateful?.Placement is HullPartPlacement placement)
                 {
                     foreach (var coord in placement.CalculateAllCoords(settings.size))
                         AddHull(glow, ship.VisualObject.transform, settings, new HullPartPlacement(
